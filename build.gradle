@@ -1,0 +1,87 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'signing'
+apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/providedCompile.gradle'
+apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/artifacts.gradle'
+
+project.version='0.5-SNAPSHOT'
+project.group='org.extrema-sistemas'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    all*.exclude module: 'commons-logging'
+}
+
+dependencies {
+
+	compile			"com.google.guava:guava:14.0.1",
+					"org.slf4j:slf4j-api:1.7.5",
+					"javax.inject:javax.inject:1",
+                    "com.google.appengine:appengine-api-1.0-sdk:${appengineVersion}",
+                    //"com.google.appengine:appengine-api-stubs:${appengineVersion}",
+                    "org.codehaus.jackson:jackson-core-asl:1.9.2",
+                    "org.codehaus.jackson:jackson-mapper-asl:1.9.2"
+			        
+					
+	testCompile		"junit:junit:4.5",
+                    "com.google.appengine:appengine-testing:${appengineVersion}",
+                    "ch.qos.logback:logback-classic:0.9.24",
+                    "org.slf4j:jul-to-slf4j:1.6.1"
+                    
+}
+
+
+artifacts {
+    archives jar
+}
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+
+    repositories.mavenDeployer {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+ 
+        pom.project {
+            name project.name
+            packaging 'jar'
+            description 'Queue4GAE is a Java wrapper for the TaskQueueService included in Google AppEngine.'
+            url 'http://www.github.com/icoloma/queue4gae/'
+            scm {
+                url 'http://www.github.com/icoloma/queue4gae/'
+                connection "git://github.com/icoloma/queue4gae.git"
+                developerConnection "git@github.com:icoloma/queue4gae.git"
+            }
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            developers {
+               developer {
+                   id 'icoloma'
+                   name 'Nacho Coloma'
+               }
+           }
+        }
+        uniqueVersion = true
+        configuration = configurations.archives
+        
+        snapshotRepository(url: 'http://oss.sonatype.org/content/repositories/snapshots') {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+        
+        repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2') {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+    }
+}
+
