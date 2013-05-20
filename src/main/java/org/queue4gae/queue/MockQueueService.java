@@ -20,6 +20,8 @@ import java.util.Map;
 @Singleton
 public class MockQueueService implements QueueService {
 
+    private InjectionService injectionService;
+
     private ObjectMapper objectMapper;
 
     /** count the number of posted tasks */
@@ -61,9 +63,14 @@ public class MockQueueService implements QueueService {
      */
     public void run(Task task) {
         try {
+            // inject before serializing, to check that all fields are serialziable as JSON
+            injectionService.injectFields(task);
             String s = objectMapper.writeValueAsString(task);
             log.info("Executing " + s);
+
+            // inject after deserializing, for proper execution
             InjectedTask deserialized = objectMapper.readValue(s, InjectedTask.class);
+            injectionService.injectFields(deserialized);
             ((AbstractTask)deserialized).run(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -98,4 +105,8 @@ public class MockQueueService implements QueueService {
         this.objectMapper = objectMapper;
     }
 
+    @Inject
+    public void setInjectionService(InjectionService injectionService) {
+        this.injectionService = injectionService;
+    }
 }

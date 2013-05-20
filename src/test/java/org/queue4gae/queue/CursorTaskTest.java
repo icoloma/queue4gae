@@ -1,6 +1,8 @@
 package org.queue4gae.queue;
 
 import com.google.appengine.api.datastore.*;
+import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
@@ -8,6 +10,8 @@ import org.j4gae.ObjectMapperSetup;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +34,7 @@ public class CursorTaskTest extends AbstractTest {
         ObjectMapperSetup.addMixins(objectMapper, Cursor.class);
 
         queueService = new MockQueueService();
+        queueService.setInjectionService(new MockInjectionService());
         queueService.setObjectMapper(objectMapper);
     }
 
@@ -111,6 +116,32 @@ public class CursorTaskTest extends AbstractTest {
 
         @Override
         protected Cursor runQuery(Cursor startCursor) {
+            if (queueTimeout) {
+                try {
+                    // ___ugly___ hack: mock the stopwatch to accelerate time.
+                    // All this work to avoid opening queueTimeout() to subclasses, since it's prone to confusion with queryTimeout() :(
+                    Field f = CursorTask.class.getDeclaredField("queueWatch");
+                    f.setAccessible(true);
+                    f.set(this, new Stopwatch(new Ticker() {
+
+                        boolean first = true;
+
+                        @Override
+                        public long read() {
+                            if (first) {
+                                first = false;
+                                return System.nanoTime();
+                            } else {
+                                return System.nanoTime() + QUEUE_TIMEOUT * 1000000L;
+                            }
+                        }
+                    }).start());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+
             DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
             Query q = new Query(KIND);
             QueryResultIterator<Entity> iterator = ds.prepare(q).asQueryResultIterator(
@@ -124,10 +155,6 @@ public class CursorTaskTest extends AbstractTest {
             return iterator.hasNext()? iterator.getCursor() : null;
         }
 
-        @Override
-        protected boolean queueTimeOut() {
-            return queueTimeout;
-        }
     }
 
 }
