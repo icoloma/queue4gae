@@ -73,7 +73,7 @@ public abstract class CursorTask extends InjectedTask {
      * @return true if the current execution of {@link #run} is close to the 10-minute limit
      * and should exit.
      */
-    protected boolean queueTimeOut() {
+    private boolean queueTimeOut() {
         // the definition of "close to the 10-minute limit" here is 1 minute.
         // This should be enough to execute runQuery again and then re-enqueue any pending work
         return queueWatch.elapsed(TimeUnit.MILLISECONDS) > QUEUE_TIMEOUT - 1 * 60 * 1000L;
