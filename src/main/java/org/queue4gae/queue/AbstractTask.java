@@ -12,6 +12,6 @@ public abstract class AbstractTask implements Task {
      * Run this task in the current thread. This method should be called internally by {@link QueueService}.
      * @param queueService the queue service that is invoking this task
      */
-    abstract void run(QueueService queueService);
+    public abstract void run(QueueService queueService);
 
 }

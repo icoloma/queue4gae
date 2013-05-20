@@ -87,7 +87,7 @@ public class CursorTaskTest extends AbstractTest {
         private DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
 
         @Override
-        void run(QueueService queueService) {
+        public void run(QueueService queueService) {
             Assert.fail("This class should not deserialize properly");
         }
     }

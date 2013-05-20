@@ -48,7 +48,7 @@ public abstract class CursorTask extends InjectedTask {
      * it returns null or the time is out
      */
     @Override
-    void run(QueueService queueService) {
+    public void run(QueueService queueService) {
         startQueueWatch();
         do {
             startQueryWatch();
