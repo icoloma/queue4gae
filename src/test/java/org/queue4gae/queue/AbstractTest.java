@@ -1,9 +1,5 @@
-package org.queue4gae.task;
+package org.queue4gae.queue;
 
-import com.google.appengine.api.blobstore.BlobKey;
-import com.google.appengine.api.datastore.GeoPt;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.Text;
 import com.google.appengine.tools.development.testing.*;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;

@@ -1,4 +1,4 @@
-package org.queue4gae.inject;
+package org.queue4gae.queue;
 
 /**
  * Delegates in your favorite DI container the messy task of Dependency Injection

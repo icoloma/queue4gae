@@ -2,41 +2,62 @@ package org.queue4gae.queue;
 
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.common.base.Preconditions;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.queue4gae.task.InjectedTask;
-import org.queue4gae.task.Task;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 
 public class QueueServiceImpl implements QueueService {
 
     /** the configured ObjectMapper. Must be capable of deserializing AppEngine classes like Key and Cursor */
-    @Inject
     private ObjectMapper objectMapper;
 
+    /** the Injection manager will be used to inject fields into task objects */
+    private InjectionService injectionService;
+
     /** the URL that will handle our queue requests */
-    @Inject
     private String taskUrl;
 
     @Override
     public void post(Task task) {
         try {
+            String queueName = task.getQueueName();
+            Preconditions.checkArgument(queueName != null, "task.getQueueName() cannot be null");
             TaskOptions options = TaskOptions.Builder.withDefaults()
                     .method(TaskOptions.Method.POST)
-                    .url("/_/task")
+                    .url(taskUrl)
                     .payload(objectMapper.writeValueAsString(task).getBytes("utf-8"), "application/json");
             Long delaySeconds = task.getDelaySeconds();
             if (delaySeconds != null) {
                 options = options.countdownMillis(delaySeconds * 1000L);
             }
-            QueueFactory.getQueue(task.getQueueName()).add(options);
+            QueueFactory.getQueue(queueName).add(options);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    @Override
+    public void run(Task task) {
+        injectionService.injectFields(task);
+        ((AbstractTask)task).run(this);
+    }
+
+    @Inject
     public void setObjectMapper(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
+
+    @Inject
+    public void setInjectionService(InjectionService injectionService) {
+        this.injectionService = injectionService;
+    }
+
+    @Inject @Named("queue4gae.taskUrl")
+    public void setTaskUrl(String taskUrl) {
+        this.taskUrl = taskUrl;
+    }
+
 }
