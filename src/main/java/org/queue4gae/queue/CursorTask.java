@@ -86,7 +86,7 @@ public abstract class CursorTask extends InjectedTask {
     protected boolean queryTimeOut() {
         // the definition of "close to the 30 second limit" here is 5 seconds.
         // Feel free to override this method if this is not your case
-        return queryWatch.elapsed(TimeUnit.MILLISECONDS) < (QUERY_TIMEOUT - 5000);
+        return queryWatch.elapsed(TimeUnit.MILLISECONDS) > QUERY_TIMEOUT - 5000;
     }
 
     /**
