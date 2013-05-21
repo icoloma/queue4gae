@@ -5,7 +5,6 @@ import org.codehaus.jackson.annotate.JsonTypeInfo;
 /**
  * Superclass of all Task implementations.
  */
-@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public abstract class AbstractTask implements Task {
 
     /**
