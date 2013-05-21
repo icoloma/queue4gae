@@ -61,7 +61,7 @@ public class MyModule extends com.google.inject.AbstractModule {
 }
 ```
 
-Now you only need to register the URL that will receive your serialized tasks at `/task` (or whatever URL you decide to use). This can be done using any web framework or even HttpServleRequest. Here is an example using JAX-RS:
+Now you only need to register the URL that will receive serialized tasks at `/task` (or whatever URL you decide to use). This can be done using any web framework or even HttpServlet. Here is an example using JAX-RS:
 
 ```Java
 public class Resource {
@@ -84,6 +84,9 @@ public class Resource {
 Now you can write your first task. Tasks that extend `InjectedTask` will have their attributes injected before execution:
 
 ```Java
+/**
+ * Send a mail to a user. Queues will retry automatically if something fails.
+ */
 public class MailTask extends InjectedTask {
 
   // REMEMBER: also annotate with JsonIgnore to avoid serializing with your JSON!
@@ -118,14 +121,14 @@ MailTask task = new MailTask(userKey);
 queueService.post(task);
 ```
 
-`InjectedTask` should be enough if your task works over a single entity, but for processing multiple results you should go with `CursorTask` instead.
+`InjectedTask` should be enough if your task processes a single entity, but for multiple results you should go with `CursorTask` instead.
 
 ## Queue limits and CursorTask
 
 Tasks in AppEngine have a limit of 10 minutes to execute, but your queries are still limited to 30 seconds. CursorTask will handle this for you:
 
- * Subclasses of CursorTask must implement a `runQuery()` method that receive a Cursor instance. With every iteration it should invoke queryTimeout() to check if it's close to exceed the 30-second limit, and in that case return the current Cursor value. As long as the return value is not null (and we are still below the 10-minute limit) the method will be invoked again with the provided Cursor to continue where it left off.
- * If the processing takes longer than 10 minutes, the task will be posted again in the same queue with the last known Cursor returned from `runQuery()`.
+ * Subclasses must implement a `runQuery()` method that receive a Cursor instance and start processing. The method should periodically invoke queryTimeout() to check if it's close to exceed the 30-second limit, and in that case return the current Cursor value. As long as the value returned is not null (and if we are still below the 10-minute limit) the method will be invoked again with the provided Cursor to continue where it left off.
+ * After 10 minutes, the task will be posted again to the same queue with the last known Cursor value returned from `runQuery()`.
 
 `CursorTask` classes can use any persistence framework, as long as it supports native AppEngine Cursors. The following example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>:
 
