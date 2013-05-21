@@ -73,7 +73,7 @@ uploadArchives {
                }
            }
         }
-        uniqueVersion = true
+        uniqueVersion = false
         configuration = configurations.archives
         
         snapshotRepository(url: 'http://oss.sonatype.org/content/repositories/snapshots') {

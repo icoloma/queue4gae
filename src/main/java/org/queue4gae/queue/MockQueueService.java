@@ -9,8 +9,11 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Intended to test your Task classes.
@@ -27,6 +30,9 @@ public class MockQueueService implements QueueService {
     /** count the number of posted tasks */
     private Map<String, Integer> taskCount = Maps.newHashMap();
 
+    /** immediate tasks to be executed now */
+    private Queue<Task> tasks = new ConcurrentLinkedQueue<Task>();
+
     /** delayed tasks */
     private List<Task> delayedTasks = Lists.newArrayList();
 
@@ -34,13 +40,24 @@ public class MockQueueService implements QueueService {
 
     /**
      * Execute the task immediately unless delaySeconds is != null.
+     * Recursive invocation of this method will store the task for later execution after the current one finishes.
+     * If a task posts another task instance, the current execution will end before starting the child task.
      * @param task
      */
     @Override
     public void post(Task task) {
         incTaskCount(task.getQueueName());
         if (task.getDelaySeconds() == null) {
-            run(task);
+            tasks.add(task);
+            if (tasks.size() == 1) {
+                // we are the first level of post(), not a recursive task-starts-task scenario
+                while (!tasks.isEmpty()) {
+                    for (Iterator<Task> it = tasks.iterator(); it.hasNext(); ) {
+                        run(it.next());
+                        it.remove();
+                    }
+                }
+            }
         } else {
             delayedTasks.add(task);
         }

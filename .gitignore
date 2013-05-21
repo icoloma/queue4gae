@@ -9,3 +9,4 @@ bin
 *.eml
 *.iws
 out
+*.sublime-workspace
