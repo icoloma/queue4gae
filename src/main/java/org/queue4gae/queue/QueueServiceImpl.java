@@ -55,8 +55,8 @@ public class QueueServiceImpl implements QueueService {
         this.injectionService = injectionService;
     }
 
-    @Inject @Named(TASK_URL)
-    public void setTaskUrl(String taskUrl) {
+    @Inject
+    public void setTaskUrl(@Named(TASK_URL) String taskUrl) {
         this.taskUrl = taskUrl;
     }
 
