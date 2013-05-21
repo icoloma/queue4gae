@@ -3,7 +3,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'maven'
 apply plugin: 'signing'
-//apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/artifacts.gradle'
+apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/artifacts.gradle'
 
 project.version='1.0'
 project.group='org.extrema-sistemas'
