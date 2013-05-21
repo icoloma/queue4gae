@@ -5,6 +5,9 @@ package org.queue4gae.queue;
  */
 public interface QueueService {
 
+    /** the URL that receives queue tasks */
+    public static final String TASK_URL = "queue4gae.taskUrl";
+
     /**
      * Post the task in a queue for a deferred execution
      */

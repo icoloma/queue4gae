@@ -41,7 +41,7 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public void run(Task task) {
-        injectionService.injectFields(task);
+        injectionService.injectMembers(task);
         ((AbstractTask)task).run(this);
     }
 
@@ -55,7 +55,7 @@ public class QueueServiceImpl implements QueueService {
         this.injectionService = injectionService;
     }
 
-    @Inject @Named("queue4gae.taskUrl")
+    @Inject @Named(TASK_URL)
     public void setTaskUrl(String taskUrl) {
         this.taskUrl = taskUrl;
     }
