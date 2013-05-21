@@ -9,6 +9,6 @@ public interface InjectionService {
      * Injects fields annotated with javax.inject.Inject.
      * @param instance The object with the fields to inject.
      */
-    public void injectFields(Object instance);
+    public void injectMembers(Object instance);
 
 }

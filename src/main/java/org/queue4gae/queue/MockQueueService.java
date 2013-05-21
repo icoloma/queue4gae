@@ -81,13 +81,13 @@ public class MockQueueService implements QueueService {
     public void run(Task task) {
         try {
             // inject before serializing, to check that all fields are serialziable as JSON
-            injectionService.injectFields(task);
+            injectionService.injectMembers(task);
             String s = objectMapper.writeValueAsString(task);
             log.info("Executing " + s);
 
             // inject after deserializing, for proper execution
             InjectedTask deserialized = objectMapper.readValue(s, InjectedTask.class);
-            injectionService.injectFields(deserialized);
+            injectionService.injectMembers(deserialized);
             ((AbstractTask)deserialized).run(this);
         } catch (IOException e) {
             throw new RuntimeException(e);

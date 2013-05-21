@@ -9,7 +9,7 @@ import org.queue4gae.queue.InjectionService;
 public class MockInjectionService implements InjectionService {
 
     @Override
-    public void injectFields(Object instance) {
+    public void injectMembers(Object instance) {
         // doing nothing is easy. This line is 100% bug-proof
     }
 
