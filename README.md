@@ -27,6 +27,24 @@ The library can be downloaded from Maven:
 Queue4Gae can be configured manually or using any Dependency Injection framework. The following example uses Guice:
 
 ```Java
+public class GuiceInjectionService implements InjectionService {
+
+    private Injector injector;
+
+    @Override
+    public void injectMembers(Object instance) {
+        injector.injectMembers(instance);
+    }
+
+    @Inject
+    public void setInjector(Injector injector) {
+        this.injector = injector;
+    }
+
+}
+```
+
+```Java
 public class MyModule extends com.google.inject.AbstractModule {
   
   @Override
@@ -41,7 +59,7 @@ public class MyModule extends com.google.inject.AbstractModule {
    */
   private void bindObjectMapper() {
     ObjectMapper objectMapper = new ObjectMapper();
-    ObjectMapperSetup.addMixins(objectMapper, Key.class, Cursor.class);
+    objectMapper.registerModule(new GaeJacksonModule());
     bind(ObjectMapper.class).toInstance(objectMapper);
   }
 
