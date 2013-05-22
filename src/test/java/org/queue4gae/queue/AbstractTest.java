@@ -1,10 +1,11 @@
 package org.queue4gae.queue;
 
-import com.google.appengine.tools.development.testing.*;
+import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
+import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
-import org.j4gae.ObjectMapperSetup;
+import org.j4gae.GaeJacksonModule;
 import org.junit.Before;
 
 public class AbstractTest {
@@ -29,9 +30,7 @@ public class AbstractTest {
     public void objectMapperSetup() {
         objectMapper = new ObjectMapper();
         objectMapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-        ObjectMapperSetup.addMixins(objectMapper,
-                com.google.appengine.api.datastore.Cursor.class
-        );
+        objectMapper.registerModule(new GaeJacksonModule());
     }
 
 }
