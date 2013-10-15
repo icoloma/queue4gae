@@ -185,6 +185,16 @@ public class UpdateUserTask extends CursorTask {
 
 This task will process all the users in the datastore and handle any timeouts transparently. Notice that the method checks if the mail has been already sent, since all AppEngine tasks must be idempotent in case the same task is executed multiple times.
 
+## Task names
+
+Just like AppEngine, in Queue4Gae you can specify a task name:
+
+```Java
+queueService.post(new MyTask().withTaskName("foobar"));
+``` 
+
+In this case the task name will be used the first time (and tombstoning applies as usual) but it will be cleared for subsequent executions. That is, if your task has to process one billion rows, the task name will only be applied to the first execution (that is, until we reach the 10-min timeout). After this timeout the tasl will be re-submitted again without any task name.
+
 ### Testing
 
 Queue4Gae includes a mock implementation of QueueService intended for testing your tasks.
