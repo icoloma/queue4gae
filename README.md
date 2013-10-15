@@ -221,3 +221,15 @@ public class UpdateUserTaskTest {
 ```
 
 Tasks are executed synchronously and sequentially when using `MockQueueService`.
+
+### Building queue4gae
+
+Standard stuff. Clone the project, then execute one of the following:
+
+```bash
+# Generate the jar and upload to maven
+gradle build && gradle upload
+
+# Generate the IDEA project configuration
+gradle idea
+```

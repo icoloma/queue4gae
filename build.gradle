@@ -8,6 +8,9 @@ apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/artifacts.grad
 project.version='1.1'
 project.group='org.extrema-sistemas'
 
+sourceCompatibility=1.6
+targetCompatibility=1.6
+
 repositories {
     mavenCentral()
 }

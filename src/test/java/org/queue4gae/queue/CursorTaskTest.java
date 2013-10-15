@@ -68,6 +68,7 @@ public class CursorTaskTest extends AbstractTest {
         queueService.post(new UnserializableTask());
     }
 
+
     private void checkData() throws EntityNotFoundException {
         for (int i = 0; i < ENTITY_COUNT; i++) {
             Entity e = ds.get(KeyFactory.createKey(KIND, i + 1));

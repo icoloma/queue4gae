@@ -29,9 +29,14 @@ public class QueueServiceImpl implements QueueService {
                     .method(TaskOptions.Method.POST)
                     .url(taskUrl)
                     .payload(objectMapper.writeValueAsString(task).getBytes("utf-8"), "application/json");
-            Long delaySeconds = task.getDelaySeconds();
-            if (delaySeconds != null) {
-                options = options.countdownMillis(delaySeconds * 1000L);
+            if (task.getTaskName() != null) {
+                options = options.taskName(task.getTaskName());
+            }
+            if (task.getTag() != null) {
+                options = options.tag(task.getTag());
+            }
+            if (task.getDelaySeconds() != null) {
+                options = options.countdownMillis(task.getDelaySeconds() * 1000L);
             }
             QueueFactory.getQueue(queueName).add(options);
         } catch (IOException e) {
