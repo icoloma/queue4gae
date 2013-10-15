@@ -107,8 +107,7 @@ Now you can write your first task. Tasks that extend `InjectedTask` will have th
  */
 public class MailTask extends InjectedTask {
 
-  // REMEMBER: also annotate with JsonIgnore to avoid serializing with your JSON!
-
+  // Important: add @JsonIgnore to skip from the JSON serialization
   @Inject @JsonIgnore
   private MyMailService mailService;
 
