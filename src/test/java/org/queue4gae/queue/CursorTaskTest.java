@@ -1,8 +1,6 @@
 package org.queue4gae.queue;
 
 import com.google.appengine.api.datastore.*;
-import com.google.common.base.Stopwatch;
-import com.google.common.base.Ticker;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
@@ -10,8 +8,6 @@ import org.j4gae.ObjectMapperSetup;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -36,6 +32,7 @@ public class CursorTaskTest extends AbstractTest {
         queueService = new MockQueueService();
         queueService.setInjectionService(new MockInjectionService());
         queueService.setObjectMapper(objectMapper);
+
     }
 
     /**
@@ -52,14 +49,26 @@ public class CursorTaskTest extends AbstractTest {
     }
 
     /**
-     * Iterates over all rows using multiple post execution: since we have exceeded the ten-minute limit, the task is re-posted three times
+     * Iterates over all rows using multiple post execution. We are returning timeout after executing each instance
      */
     @Test
     public void testRunMultiplePost() throws Exception {
         initData();
         OneRowTask task = new OneRowTask(true);
         queueService.post(task);
-        assertEquals(ENTITY_COUNT, queueService.getTaskCount());
+        assertEquals(3, queueService.getTaskCount());
+        checkData();
+    }
+
+    /**
+     * Test tasks with a name. Successive invocations should not include the tombstone.
+     * @throws Exception
+     */
+    @Test
+    public void testTombstone() throws Exception {
+        initData();
+        queueService.post(new OneRowTask(true).withTaskName("foobar"));
+        assertEquals(3, queueService.getTaskCount());
         checkData();
     }
 
@@ -104,7 +113,7 @@ public class CursorTaskTest extends AbstractTest {
      */
     public static class OneRowTask extends CursorTask {
 
-        private boolean queueTimeout;
+        private boolean forceQueueTimeout;
 
         private OneRowTask() {
             super("foobar-queue");
@@ -112,37 +121,11 @@ public class CursorTaskTest extends AbstractTest {
 
         private OneRowTask(boolean queueTimeOut) {
             this();
-            this.queueTimeout = queueTimeOut;
+            this.forceQueueTimeout = queueTimeOut;
         }
 
         @Override
         protected Cursor runQuery(Cursor startCursor) {
-            if (queueTimeout) {
-                try {
-                    // ___ugly___ hack: mock the stopwatch to accelerate time.
-                    // All this work to avoid opening queueTimeout() to subclasses, since it's prone to confusion with queryTimeout() :(
-                    Field f = CursorTask.class.getDeclaredField("queueWatch");
-                    f.setAccessible(true);
-                    f.set(this, new Stopwatch(new Ticker() {
-
-                        boolean first = true;
-
-                        @Override
-                        public long read() {
-                            if (first) {
-                                first = false;
-                                return System.nanoTime();
-                            } else {
-                                return System.nanoTime() + QUEUE_TIMEOUT * 1000000L;
-                            }
-                        }
-                    }).start());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
-
             DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
             Query q = new Query(KIND);
             QueryResultIterator<Entity> iterator = ds.prepare(q).asQueryResultIterator(
@@ -156,6 +139,10 @@ public class CursorTaskTest extends AbstractTest {
             return iterator.hasNext()? iterator.getCursor() : null;
         }
 
+        @Override
+        boolean queueTimeOut() {
+            return forceQueueTimeout? true : super.queueTimeOut();
+        }
     }
 
 }

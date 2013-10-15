@@ -1,7 +1,9 @@
 package org.queue4gae.queue;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,10 +11,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -36,6 +35,9 @@ public class MockQueueService implements QueueService {
     /** delayed tasks */
     private List<Task> delayedTasks = Lists.newArrayList();
 
+    /** used task names */
+    private Set<String> tombstones = Sets.newHashSet();
+
     private static final Logger log = LoggerFactory.getLogger(MockQueueService.class);
 
     /**
@@ -49,6 +51,9 @@ public class MockQueueService implements QueueService {
         incTaskCount(task.getQueueName());
         if (task.getDelaySeconds() == null) {
             tasks.add(task);
+            if (task.getTaskName() != null) {
+                Preconditions.checkArgument(tombstones.add(task.getTaskName()), "Taskname %s already used", task.getTaskName());
+            }
             if (tasks.size() == 1) {
                 // we are the first level of post(), not a recursive task-starts-task scenario
                 while (!tasks.isEmpty()) {
@@ -80,7 +85,7 @@ public class MockQueueService implements QueueService {
      */
     public void run(Task task) {
         try {
-            // inject before serializing, to check that all fields are serialziable as JSON
+            // inject before serializing, to check that all fields are serializable as JSON
             injectionService.injectMembers(task);
             String s = objectMapper.writeValueAsString(task);
             log.info("Executing " + s);

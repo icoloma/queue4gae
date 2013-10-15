@@ -57,6 +57,11 @@ public abstract class CursorTask extends InjectedTask {
 
         // if there is still work to do, re-enqueue this task with the new cursor value
         if (cursor != null) {
+            if (taskName != null) {
+                // Clear the taskname to re-post this task, which would not be possible with the current task name
+                taskName = null;
+            }
+
             queueService.post(this);
         }
     }
@@ -73,7 +78,7 @@ public abstract class CursorTask extends InjectedTask {
      * @return true if the current execution of {@link #run} is close to the 10-minute limit
      * and should exit.
      */
-    private boolean queueTimeOut() {
+    boolean queueTimeOut() {
         // the definition of "close to the 10-minute limit" here is 1 minute.
         // This should be enough to execute runQuery again and then re-enqueue any pending work
         return queueWatch.elapsed(TimeUnit.MILLISECONDS) > QUEUE_TIMEOUT - 1 * 60 * 1000L;
