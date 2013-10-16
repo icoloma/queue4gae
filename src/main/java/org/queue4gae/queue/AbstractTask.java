@@ -18,7 +18,7 @@ public abstract class AbstractTask<T> implements Task {
     protected String tag;
 
     /** A number of seconds to wait before execution. May be null. */
-    private Long delaySeconds;
+    private int delaySeconds;
 
     /**
      * Run this task in the current thread. This method should be called internally by {@link QueueService}.
@@ -61,7 +61,7 @@ public abstract class AbstractTask<T> implements Task {
     }
 
     @Override
-    public T withDelaySeconds(Long delaySeconds) {
+    public T withDelaySeconds(int delaySeconds) {
         this.delaySeconds = delaySeconds;
         return (T) this;
     }
@@ -73,7 +73,7 @@ public abstract class AbstractTask<T> implements Task {
     }
 
     @Override
-    public Long getDelaySeconds() {
+    public int getDelaySeconds() {
         return delaySeconds;
     }
 }

@@ -49,7 +49,7 @@ public class MockQueueService implements QueueService {
     @Override
     public void post(Task task) {
         incTaskCount(task.getQueueName());
-        if (task.getDelaySeconds() == null) {
+        if (task.getDelaySeconds() == 0) {
             tasks.add(task);
             if (task.getTaskName() != null) {
                 Preconditions.checkArgument(tombstones.add(task.getTaskName()), "Taskname %s already used", task.getTaskName());

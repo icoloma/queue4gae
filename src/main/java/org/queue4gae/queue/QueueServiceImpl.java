@@ -35,7 +35,7 @@ public class QueueServiceImpl implements QueueService {
             if (task.getTag() != null) {
                 options = options.tag(task.getTag());
             }
-            if (task.getDelaySeconds() != null) {
+            if (task.getDelaySeconds() != 0) {
                 options = options.countdownMillis(task.getDelaySeconds() * 1000L);
             }
             QueueFactory.getQueue(queueName).add(options);

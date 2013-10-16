@@ -47,11 +47,11 @@ public interface Task<T> {
     /**
      * Set a number of seconds to wait before executing this task.
      */
-    T withDelaySeconds(Long delaySeconds);
+    T withDelaySeconds(int delaySeconds);
 
     /**
      * @return number of seconds to wait before executing this task. May be null, in which case it will be executed as soon as possible.
      */
-    Long getDelaySeconds();
+    int getDelaySeconds();
 
 }
