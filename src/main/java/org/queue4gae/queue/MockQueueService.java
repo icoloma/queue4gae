@@ -1,5 +1,6 @@
 package org.queue4gae.queue;
 
+import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -52,7 +53,9 @@ public class MockQueueService implements QueueService {
         if (task.getDelaySeconds() == 0) {
             tasks.add(task);
             if (task.getTaskName() != null) {
-                Preconditions.checkArgument(tombstones.add(task.getTaskName()), "Taskname %s already used", task.getTaskName());
+                if (!tombstones.add(task.getTaskName()) {
+                    throw new TaskAlreadyExistsException("Task name '" + task.getTaskName() + "' is already in the queue");
+                }
             }
             if (tasks.size() == 1) {
                 // we are the first level of post(), not a recursive task-starts-task scenario
