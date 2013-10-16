@@ -53,7 +53,7 @@ public class MockQueueService implements QueueService {
         if (task.getDelaySeconds() == 0) {
             tasks.add(task);
             if (task.getTaskName() != null) {
-                if (!tombstones.add(task.getTaskName()) {
+                if (!tombstones.add(task.getTaskName())) {
                     throw new TaskAlreadyExistsException("Task name '" + task.getTaskName() + "' is already in the queue");
                 }
             }
