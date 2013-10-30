@@ -3,7 +3,7 @@
 Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the built-in DeferredTask serialization with a JSON-based implementation.
 
  * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. Think `DeferredTask` using JSON instead of native serialization.
- * Since they are using JSON **serialized tasks can be inspected using the AppEngine console** when something goes wrong. 
+ * Since they are using JSON, **serialized tasks can be inspected using the AppEngine console** when something goes wrong. 
  * Requires **a single URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet.
  * Includes **a pluggable injection mechanism** to `@Inject` fields into your tasks.
  * In case of timeout, tasks will **automatically resume where they left off**.
