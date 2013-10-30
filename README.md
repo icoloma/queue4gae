@@ -4,7 +4,7 @@ Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the bu
 
  * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. They run just as DeferredTasks with a JSON serialization instead of native.
  * Since tasks are serialized using JSON **they can be inspected using the AppEngine console**, meaning that you can always inspect the queue contents in the AppEngine console in case something goes wrong. 
- * **A single post URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet for the hardcore between us.
+ * **A single post URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet.
  * **A pluggable injection mechanism** to @Inject fields into your tasks.
  * In case of timeout, tasks will **automatically resume where they left off**.
  * **Easier, synchronous testing environment**.
@@ -79,7 +79,7 @@ public class MyModule extends com.google.inject.AbstractModule {
 }
 ```
 
-Now you only need to register the URL that will receive serialized tasks at `/task` (or whatever URL you decide to use). This can be done using any web framework or even HttpServlet. Here is an example using JAX-RS:
+Register the URL that will receive serialized tasks at `/task`. This can be done using any web technology, this example uses JAX-RS:
 
 ```Java
 public class Resource {
@@ -99,7 +99,7 @@ public class Resource {
 
 ### Writing your first task
 
-Now you can write your first task. Tasks that extend `InjectedTask` will have their attributes injected before execution:
+Make your task extend `InjectedTask` to have attributes injected before execution:
 
 ```Java
 /**
@@ -138,14 +138,9 @@ MailTask task = new MailTask(userKey);
 queueService.post(task);
 ```
 
-`InjectedTask` should be enough if your task processes a single entity, but for multiple results you should go with `CursorTask` instead.
-
 ## Queue limits and CursorTask
 
-Tasks in AppEngine have a limit of 10 minutes to execute, but your queries are still limited to 30 seconds. CursorTask will handle this for you:
-
- * Subclasses must implement a `runQuery()` method that receive a Cursor instance and start processing. The method should periodically invoke queryTimeout() to check if it's close to exceed the 30-second limit, and in that case return the current Cursor value. As long as the value returned is not null (and if we are still below the 10-minute limit) the method will be invoked again with the provided Cursor to continue where it left off.
- * After 10 minutes, the task will be posted again to the same queue with the last known Cursor value returned from `runQuery()`.
+`InjectedTask` should be enough for simple tasks, but in order to process multiple results you should be better extending `CursorTask` instead.
 
 `CursorTask` classes can use any persistence framework, as long as it supports native AppEngine Cursors. The following example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>:
 
@@ -182,7 +177,11 @@ public class UpdateUserTask extends CursorTask {
 
 ```
 
-This task will process all the users in the datastore and handle any timeouts transparently. Notice that the method checks if the mail has been already sent, since all AppEngine tasks must be idempotent in case the same task is executed multiple times.
+Subclasses of `CursorTask` must provide with a `runQuery()` method that receives a Cursor instance (may be null), launches a query and starts processing results. This method should periodically check queryTimeout() to notice if the query is close to exceed the 30-second limit, and in that case return the current Cursor value. As long as the value returned is not null (and if the current task execution is still below the 10-minute limit) `runQuery` will be executed again with the last known Cursor to continue where it left off.
+
+After 10 minutes, the task will be posted again to the queue with the last known Cursor value. This process will be repeated until `runQuery` returns null.
+
+Notice that this example checks if the mail has been already sent, since all AppEngine tasks must be idempotent.
 
 ## Task names
 
@@ -192,7 +191,7 @@ Just like AppEngine, in Queue4Gae you can specify a task name:
 queueService.post(new MyTask().withTaskName("foobar"));
 ``` 
 
-In this case the task name will be used the first time (and tombstoning applies as usual) but it will be cleared for subsequent executions. That is, if your task has to process one billion rows, the task name will only be applied to the first execution (that is, until we reach the 10-min timeout). After this timeout the tasl will be re-submitted again without any task name.
+This task name will be used the first time (where tombstoning applies as usual) but it will be cleared for subsequent executions. For example, if your task has to process one billion rows the task name will only be applied to the first execution (and until we reach the 10-min timeout). After this timeout the `CursorTask` will clear the task name and re-submit itself again.
 
 ### Testing
 
