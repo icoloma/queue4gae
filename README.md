@@ -2,12 +2,12 @@
 
 Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the built-in DeferredTask serialization with a JSON-based implementation.
 
- * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. They run just as DeferredTasks with a JSON serialization instead of native.
- * Since tasks are serialized using JSON **serialized tasks can be inspected using the AppEngine console** when something goes wrong. 
- * **A single post URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet.
- * **A pluggable injection mechanism** to @Inject fields into your tasks.
+ * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. Think `DeferredTask` using JSON instead of native serialization.
+ * Since they are using JSON **serialized tasks can be inspected using the AppEngine console** when something goes wrong. 
+ * Requires **a single URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet.
+ * Includes **a pluggable injection mechanism** to `@Inject` fields into your tasks.
  * In case of timeout, tasks will **automatically resume where they left off**.
- * **Easier, synchronous testing environment**.
+ * Includes a **mock testing environment**.
 
 ## Getting started
 
@@ -24,25 +24,8 @@ The library can be downloaded from Maven:
 </dependency>
 ```
 
-Queue4Gae can be configured manually or using any Dependency Injection framework. The following example uses Guice:
+Queue4Gae can be configured by hand or using any Dependency Injection framework. A Guice example:
 
-```Java
-public class GuiceInjectionService implements InjectionService {
-
-    private Injector injector;
-
-    @Override
-    public void injectMembers(Object instance) {
-        injector.injectMembers(instance);
-    }
-
-    @Inject
-    public void setInjector(Injector injector) {
-        this.injector = injector;
-    }
-
-}
-```
 
 ```Java
 public class MyModule extends com.google.inject.AbstractModule {
@@ -79,7 +62,25 @@ public class MyModule extends com.google.inject.AbstractModule {
 }
 ```
 
-Register the URL that will receive serialized tasks at `/task`. This can be done using any web technology, this example uses JAX-RS:
+```Java
+public class GuiceInjectionService implements InjectionService {
+
+    private Injector injector;
+
+    @Override
+    public void injectMembers(Object instance) {
+        injector.injectMembers(instance);
+    }
+
+    @Inject
+    public void setInjector(Injector injector) {
+        this.injector = injector;
+    }
+
+}
+```
+
+The URL that will receive serialized tasks (in this example `/task`) can be implemented using any web technology. An example using JAX-RS:
 
 ```Java
 public class Resource {
@@ -99,7 +100,7 @@ public class Resource {
 
 ### Writing your first task
 
-Make your task extend `InjectedTask` to have attributes injected before execution:
+Make your task extend `InjectedTask` in order to have attributes injected before execution:
 
 ```Java
 /**
@@ -129,11 +130,7 @@ public class MailTask extends InjectedTask {
   }
 
 }
-```
 
-To use this task:
-
-```Java
 MailTask task = new MailTask(userKey);
 queueService.post(task);
 ```
