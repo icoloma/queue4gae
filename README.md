@@ -11,7 +11,7 @@ Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the bu
 
 ## Getting started
 
-The library can be downloaded from Maven:
+Queue4Gae can be downloaded from Maven:
 
 ```XML
 <dependency>
@@ -24,7 +24,7 @@ The library can be downloaded from Maven:
 </dependency>
 ```
 
-Queue4Gae can be configured by hand or using any Dependency Injection framework. A Guice example:
+The configuration can be done using any Dependency Injection framework (or even by hand). An example using Guice:
 
 
 ```Java
@@ -36,26 +36,20 @@ public class MyModule extends com.google.inject.AbstractModule {
     bindQueue4Gae();
   }
 
-  /**
-   * An ObjectMapper instance that knows how to serialize GAE classes.
-   * Put here the classes that will be attributes in your tasks
-   */
+  // bind an ObjectMapper that knows how to handle classes specific to GAE
   private void bindObjectMapper() {
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new GaeJacksonModule());
     bind(ObjectMapper.class).toInstance(objectMapper);
   }
 
-  /** 
-   * Configure Queue4Gae
-   */
+  // bind the classes required by Queue4Gae
   private void bindQueue4Gae() {
 
-    // Set the QueueService and InjectionService implementations
     bind(QueueService.class).to(QueueServiceImpl.class);
     bind(InjectionService.class).to(GuiceInjectionService.class);
 
-    // Change this with your task URL
+    // Change this to your task URL
     bindConstant().annotatedWith(Names.named(QueueService.TASK_URL)).to("/task");
   }
 
@@ -100,11 +94,11 @@ public class Resource {
 
 ### Writing your first task
 
-Make your task extend `InjectedTask` in order to have attributes injected before execution:
+Make your task extend `InjectedTask` in order to have its attributes injected before execution:
 
 ```Java
 /**
- * Send a mail to a user. Queues will retry automatically if something fails.
+ * Send a mail to a user. Will be retried automatically if something fails.
  */
 public class MailTask extends InjectedTask {
 
@@ -112,15 +106,14 @@ public class MailTask extends InjectedTask {
   @Inject @JsonIgnore
   private MyMailService mailService;
 
-  /** the user key */
   private Key userKey;
 
-  public MailTask() {
-      // just for jackson
+  private MailTask() {
+      // just for jackson deserialization
   }
 
   public MailTask(Key userKey) {
-    super("my-mail-queue-name");
+    super("default");
     this.userKey = userKey;
   }
 
@@ -137,9 +130,7 @@ queueService.post(task);
 
 ## Queue limits and CursorTask
 
-`InjectedTask` should be enough for simple tasks, but in order to process multiple results you should be better extending `CursorTask` instead.
-
-`CursorTask` classes can use any persistence framework, as long as it supports native AppEngine Cursors. The following example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>:
+Queue tasks will timeout after 10 minutes, and individual queries will timeout after 30 seconds. In order to work around these limitations, make your task extend `CursorTask`.
 
 ```Java
 public class UpdateUserTask extends CursorTask {
@@ -155,9 +146,9 @@ public class UpdateUserTask extends CursorTask {
   }
 
   @Override
-  protected Cursor runQuery(Cursor cursor) {
+  protected Cursor runQuery(Cursor startCursor) {
     CursorIterator<User> it = entityManager.createQuery(User.class)
-        .withStartCursor(cursor)
+        .withStartCursor(startCursor)
         .asIterator();
     while (it.hasNext() && !queryTimeOut()) {
       User user = it.next();
@@ -174,21 +165,29 @@ public class UpdateUserTask extends CursorTask {
 
 ```
 
-Subclasses of `CursorTask` must provide with a `runQuery()` method that receives a Cursor instance (may be null), launches a query and starts processing results. This method should periodically check queryTimeout() to notice if the query is close to exceed the 30-second limit, and in that case return the current Cursor value. As long as the value returned is not null (and if the current task execution is still below the 10-minute limit) `runQuery` will be executed again with the last known Cursor to continue where it left off.
+You can use any persistence framework as long as it supports native AppEngine Cursors. This example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>. 
 
-After 10 minutes, the task will be posted again to the queue with the last known Cursor value. This process will be repeated until `runQuery` returns null.
+Subclasses of `CursorTask` must provide with a `runQuery()` method that will be invoked 
+to process results starting with the provided cursor, if any. 
+This method must check `queryTimeout()` at the beginning of each iteration to check that we are not close 
+to the 30-second timeout, in which case it should exit and return the current Cursor. As long 
+as the method returns a non-null Cursor (and if we are still below the 10-minute limit) 
+`runQuery` will be invoked again to continue processing results.
 
-Notice that this example checks if the mail has been already sent, since all AppEngine tasks must be idempotent.
+After 10 minutes, the task will be re-submitted again to the queue with the last known `Cursor` value. 
+This process will be repeated until `runQuery` returns null.
+
+Notice that this example still checks if the mail has been already sent, since all task implementations must be idempotent.
 
 ## Task names
 
-Just like AppEngine, in Queue4Gae you can specify a task name:
+You can specify a task name:
 
 ```Java
 queueService.post(new MyTask().withTaskName("foobar"));
 ``` 
 
-This task name will be used the first time (where tombstoning applies as usual) but it will be cleared for subsequent executions. For example, if your task has to process one billion rows the task name will only be applied to the first execution (and until we reach the 10-min timeout). After this timeout the `CursorTask` will clear the task name and re-submit itself again.
+This task name will be used the first time (where tombstoning rules are applied) but it will be cleared for subsequent executions. For example, a task that must process one billion rows will apply the task name only to its first execution (and until the 10-min timeout is reached). After this execution the task name will be cleared before re-submitting the task again.
 
 ### Testing
 
