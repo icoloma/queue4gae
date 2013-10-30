@@ -4,8 +4,8 @@ Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the bu
 
  * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. Think `DeferredTask` using JSON instead of native serialization.
  * Since they are using JSON, **serialized tasks can be inspected using the AppEngine console** when something goes wrong. 
- * Requires **a single URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet.
- * Includes **a pluggable injection mechanism** to `@Inject` fields into your tasks.
+ * Requires **a single URL** using any web technology: Jersey, Play, HttpServlet...
+ * Includes **a pluggable injection mechanism** to `@Inject` fields into tasks.
  * In case of timeout, tasks will **automatically resume where they left off**.
  * Includes a **mock testing environment**.
 
@@ -94,7 +94,7 @@ public class Resource {
 
 ### Writing your first task
 
-Make your task extend `InjectedTask` in order to have its attributes injected before execution:
+Any task extending `InjectedTask` will have its attributes injected before execution:
 
 ```Java
 /**
@@ -130,10 +130,10 @@ queueService.post(task);
 
 ## Queue limits and CursorTask
 
-Queue tasks will timeout after 10 minutes, and individual queries will timeout after 30 seconds. In order to work around these limitations, make your task extend `CursorTask`.
+Queue tasks will timeout after 10 minutes, and individual queries will timeout after 30 seconds. In order to work around these limitations, make the task extend `CursorTask`.
 
 ```Java
-public class UpdateUserTask extends CursorTask {
+public class SendMailToUsersTask extends CursorTask {
 
   @Inject @JsonIgnore
   private EntityManager entityManager;
@@ -165,7 +165,7 @@ public class UpdateUserTask extends CursorTask {
 
 ```
 
-You can use any persistence framework as long as it supports native AppEngine Cursors. This example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>. 
+Any persistence framework can be used as long as it supports native AppEngine Cursors. This example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>. 
 
 Subclasses of `CursorTask` must provide with a `runQuery()` method that will be invoked 
 to process results starting with the provided cursor, if any. 
@@ -181,7 +181,7 @@ Notice that this example still checks if the mail has been already sent, since a
 
 ## Task names
 
-You can specify a task name:
+Tasks may specify a task name:
 
 ```Java
 queueService.post(new MyTask().withTaskName("foobar"));
@@ -191,7 +191,7 @@ This task name will be used the first time (where tombstoning rules are applied)
 
 ### Testing
 
-Queue4Gae includes a mock implementation of QueueService intended for testing your tasks.
+Queue4Gae includes a mock implementation of QueueService for testing.
 
 ```Java
 public class UpdateUserTaskTest {
@@ -210,9 +210,9 @@ public class UpdateUserTaskTest {
     entityManager.put(ImmutableLIst.of(user1, user2));
 
     // execute the task
-    queue.post(new UpdateUserTask());
+    queue.post(new SendMailToUsersTask());
 
-    // 1 UpdateUserTask + 2 MailTasks = 3 Tasks
+    // 1 SendMailToUsersTask + 2 MailTasks = 3 Tasks
     assertEquals(3, queueService.getTaskCount());
 
     // check the data
