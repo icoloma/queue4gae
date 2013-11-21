@@ -2,16 +2,16 @@
 
 Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the built-in DeferredTask serialization with a JSON-based implementation.
 
- * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. They run just as DeferredTasks with a JSON serialization instead of native.
- * Since tasks are serialized using JSON **they can be inspected using the AppEngine console**, meaning that you can always inspect the queue contents in the AppEngine console in case something goes wrong. 
- * **A single post URL** using the technology of your choice: Jersey, Spring MVC or HttpServlet for the hardcore between us.
- * **A pluggable injection mechanism** to @Inject fields into your tasks.
+ * Tasks implemented with Queue4GAE use **the same Task Queue Service included in AppEngine**. Think `DeferredTask` using JSON instead of native serialization.
+ * Since they are using JSON, **serialized tasks can be inspected using the AppEngine console** when something goes wrong. 
+ * Requires **a single URL** using any web technology: Jersey, Play, HttpServlet...
+ * Includes **a pluggable injection mechanism** to `@Inject` fields into tasks.
  * In case of timeout, tasks will **automatically resume where they left off**.
- * **Easier, synchronous testing environment**.
+ * Includes a **mock testing environment**.
 
 ## Getting started
 
-The library can be downloaded from Maven:
+Queue4Gae can be downloaded from Maven:
 
 ```XML
 <dependency>
@@ -24,7 +24,37 @@ The library can be downloaded from Maven:
 </dependency>
 ```
 
-Queue4Gae can be configured manually or using any Dependency Injection framework. The following example uses Guice:
+The configuration can be done using any Dependency Injection framework (or even by hand). An example using Guice:
+
+
+```Java
+public class MyModule extends com.google.inject.AbstractModule {
+  
+  @Override
+  protected void configure() {
+    bindObjectMapper();
+    bindQueue4Gae();
+  }
+
+  // bind an ObjectMapper that knows how to handle classes specific to GAE
+  private void bindObjectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new GaeJacksonModule());
+    bind(ObjectMapper.class).toInstance(objectMapper);
+  }
+
+  // bind the classes required by Queue4Gae
+  private void bindQueue4Gae() {
+
+    bind(QueueService.class).to(QueueServiceImpl.class);
+    bind(InjectionService.class).to(GuiceInjectionService.class);
+
+    // Change this to your task URL
+    bindConstant().annotatedWith(Names.named(QueueService.TASK_URL)).to("/task");
+  }
+
+}
+```
 
 ```Java
 public class GuiceInjectionService implements InjectionService {
@@ -44,42 +74,7 @@ public class GuiceInjectionService implements InjectionService {
 }
 ```
 
-```Java
-public class MyModule extends com.google.inject.AbstractModule {
-  
-  @Override
-  protected void configure() {
-    bindObjectMapper();
-    bindQueue4Gae();
-  }
-
-  /**
-   * An ObjectMapper instance that knows how to serialize GAE classes.
-   * Put here the classes that will be attributes in your tasks
-   */
-  private void bindObjectMapper() {
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new GaeJacksonModule());
-    bind(ObjectMapper.class).toInstance(objectMapper);
-  }
-
-  /** 
-   * Configure Queue4Gae
-   */
-  private void bindQueue4Gae() {
-
-    // Set the QueueService and InjectionService implementations
-    bind(QueueService.class).to(QueueServiceImpl.class);
-    bind(InjectionService.class).to(GuiceInjectionService.class);
-
-    // Change this with your task URL
-    bindConstant().annotatedWith(Names.named(QueueService.TASK_URL)).to("/task");
-  }
-
-}
-```
-
-Now you only need to register the URL that will receive serialized tasks at `/task` (or whatever URL you decide to use). This can be done using any web framework or even HttpServlet. Here is an example using JAX-RS:
+The URL that will receive serialized tasks (in this example `/task`) can be implemented using any web technology. An example using JAX-RS:
 
 ```Java
 public class Resource {
@@ -99,28 +94,26 @@ public class Resource {
 
 ### Writing your first task
 
-Now you can write your first task. Tasks that extend `InjectedTask` will have their attributes injected before execution:
+Any task extending `InjectedTask` will have its attributes injected before execution:
 
 ```Java
 /**
- * Send a mail to a user. Queues will retry automatically if something fails.
+ * Send a mail to a user. Will be retried automatically if something fails.
  */
 public class MailTask extends InjectedTask {
 
-  // REMEMBER: also annotate with JsonIgnore to avoid serializing with your JSON!
-
+  // Important: add @JsonIgnore to skip from the JSON serialization
   @Inject @JsonIgnore
   private MyMailService mailService;
 
-  /** the user key */
   private Key userKey;
 
-  public MailTask() {
-      // just for jackson
+  private MailTask() {
+      // just for jackson deserialization
   }
 
   public MailTask(Key userKey) {
-    super("my-mail-queue-name");
+    super("default");
     this.userKey = userKey;
   }
 
@@ -130,28 +123,17 @@ public class MailTask extends InjectedTask {
   }
 
 }
-```
 
-To use this task:
-
-```Java
 MailTask task = new MailTask(userKey);
 queueService.post(task);
 ```
 
-`InjectedTask` should be enough if your task processes a single entity, but for multiple results you should go with `CursorTask` instead.
-
 ## Queue limits and CursorTask
 
-Tasks in AppEngine have a limit of 10 minutes to execute, but your queries are still limited to 30 seconds. CursorTask will handle this for you:
-
- * Subclasses must implement a `runQuery()` method that receive a Cursor instance and start processing. The method should periodically invoke queryTimeout() to check if it's close to exceed the 30-second limit, and in that case return the current Cursor value. As long as the value returned is not null (and if we are still below the 10-minute limit) the method will be invoked again with the provided Cursor to continue where it left off.
- * After 10 minutes, the task will be posted again to the same queue with the last known Cursor value returned from `runQuery()`.
-
-`CursorTask` classes can use any persistence framework, as long as it supports native AppEngine Cursors. The following example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>:
+Queue tasks will timeout after 10 minutes, and individual queries will timeout after 30 seconds. In order to work around these limitations, make the task extend `CursorTask`.
 
 ```Java
-public class UpdateUserTask extends CursorTask {
+public class SendMailToUsersTask extends CursorTask {
 
   @Inject @JsonIgnore
   private EntityManager entityManager;
@@ -164,9 +146,9 @@ public class UpdateUserTask extends CursorTask {
   }
 
   @Override
-  protected Cursor runQuery(Cursor cursor) {
+  protected Cursor runQuery(Cursor startCursor) {
     CursorIterator<User> it = entityManager.createQuery(User.class)
-        .withStartCursor(cursor)
+        .withStartCursor(startCursor)
         .asIterator();
     while (it.hasNext() && !queryTimeOut()) {
       User user = it.next();
@@ -183,11 +165,33 @@ public class UpdateUserTask extends CursorTask {
 
 ```
 
-This task will process all the users in the datastore and handle any timeouts transparently. Notice that the method checks if the mail has been already sent, since all AppEngine tasks must be idempotent in case the same task is executed multiple times.
+Any persistence framework can be used as long as it supports native AppEngine Cursors. This example uses <a href="https://github.com/icoloma/simpleds">SimpleDS</a>. 
+
+Subclasses of `CursorTask` must provide with a `runQuery()` method that will be invoked 
+to process results starting with the provided cursor, if any. 
+This method must check `queryTimeout()` at the beginning of each iteration to check that we are not close 
+to the 30-second timeout, in which case it should exit and return the current Cursor. As long 
+as the method returns a non-null Cursor (and if we are still below the 10-minute limit) 
+`runQuery` will be invoked again to continue processing results.
+
+After 10 minutes, the task will be re-submitted again to the queue with the last known `Cursor` value. 
+This process will be repeated until `runQuery` returns null.
+
+Notice that this example still checks if the mail has been already sent, since all task implementations must be idempotent.
+
+## Task names
+
+Tasks may specify a task name:
+
+```Java
+queueService.post(new MyTask().withTaskName("foobar"));
+``` 
+
+This task name will be used the first time (where tombstoning rules are applied) but it will be cleared for subsequent executions. For example, a task that must process one billion rows will apply the task name only to its first execution (and until the 10-min timeout is reached). After this execution the task name will be cleared before re-submitting the task again.
 
 ### Testing
 
-Queue4Gae includes a mock implementation of QueueService intended for testing your tasks.
+Queue4Gae includes a mock implementation of QueueService for testing.
 
 ```Java
 public class UpdateUserTaskTest {
@@ -206,9 +210,9 @@ public class UpdateUserTaskTest {
     entityManager.put(ImmutableLIst.of(user1, user2));
 
     // execute the task
-    queue.post(new UpdateUserTask());
+    queue.post(new SendMailToUsersTask());
 
-    // 1 UpdateUserTask + 2 MailTasks = 3 Tasks
+    // 1 SendMailToUsersTask + 2 MailTasks = 3 Tasks
     assertEquals(3, queueService.getTaskCount());
 
     // check the data
