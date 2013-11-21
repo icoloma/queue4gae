@@ -1,12 +1,17 @@
-package org.queue4gae.queue;
+package org.queue4gae.queue.mock;
 
 import com.google.appengine.api.datastore.Cursor;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
+import org.j4gae.GaeJacksonModule;
 import org.j4gae.ObjectMapperSetup;
 import org.junit.Before;
 import org.junit.Test;
+import org.queue4gae.queue.InjectedTask;
+import org.queue4gae.queue.QueueService;
+import org.queue4gae.queue.mock.MockInjectionService;
+import org.queue4gae.queue.mock.MockQueueService;
 
 import static org.junit.Assert.assertTrue;
 
@@ -25,7 +30,7 @@ public class MockQueueServiceTest {
     public void setupServices() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-        ObjectMapperSetup.addMixins(objectMapper, Cursor.class);
+        objectMapper.registerModule(new GaeJacksonModule());
 
         queueService = new MockQueueService();
         queueService.setInjectionService(new MockInjectionService());

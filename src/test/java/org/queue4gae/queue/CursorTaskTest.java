@@ -8,6 +8,8 @@ import org.j4gae.ObjectMapperSetup;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.queue4gae.queue.mock.MockInjectionService;
+import org.queue4gae.queue.mock.MockQueueService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -44,7 +46,8 @@ public class CursorTaskTest extends AbstractTest {
         initData();
         OneRowTask task = new OneRowTask(false);
         queueService.post(task);
-        assertEquals(1, queueService.getTaskCount());
+        assertEquals(1, queueService.getQueuedTaskCount());
+        assertEquals(1, queueService.getCompletedTaskCount());
         checkData();
     }
 
@@ -56,7 +59,8 @@ public class CursorTaskTest extends AbstractTest {
         initData();
         OneRowTask task = new OneRowTask(true);
         queueService.post(task);
-        assertEquals(3, queueService.getTaskCount());
+        assertEquals(3, queueService.getQueuedTaskCount());
+        assertEquals(3, queueService.getCompletedTaskCount());
         checkData();
     }
 
@@ -68,7 +72,8 @@ public class CursorTaskTest extends AbstractTest {
     public void testTombstone() throws Exception {
         initData();
         queueService.post(new OneRowTask(true).withTaskName("foobar"));
-        assertEquals(3, queueService.getTaskCount());
+        assertEquals(3, queueService.getQueuedTaskCount());
+        assertEquals(3, queueService.getCompletedTaskCount());
         checkData();
     }
 

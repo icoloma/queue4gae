@@ -1,9 +1,9 @@
-package org.queue4gae.queue;
+package org.queue4gae.queue.mock;
 
 import org.queue4gae.queue.InjectionService;
 
 /**
- * This implementation does not do anything. Use this in your test environment, or if you simply do not need to
+ * This implementation does not do anything. Use this in your mock environment, or if you simply do not need to
  * inject anything into Task classes.
  */
 public class MockInjectionService implements InjectionService {
