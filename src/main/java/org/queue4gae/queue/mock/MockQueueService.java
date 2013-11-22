@@ -15,9 +15,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Singleton
 public class MockQueueService extends AbstractQueueServiceImpl {
 
-    /** delayed tasks */
-    private List<Task> delayedTasks = Lists.newArrayList();
-
     /** our queue of tasks */
     protected Queue<Task> tasks = new ConcurrentLinkedQueue<Task>();
 
@@ -49,26 +46,12 @@ public class MockQueueService extends AbstractQueueServiceImpl {
                         Task t = it.next();
                         run(t);
                         it.remove();
-                        incCompletedTaskCount(t.getQueueName());
                     }
                 }
             }
         } else {
-            delayedTasks.add(task);
+            pushDelayedTask(task);
         }
     }
-
-    /**
-     * Execute delayed tasks
-     */
-    public void runDelayedTasks() {
-        if (delayedTasks.size() > 0) {
-            log.info("Running " + delayedTasks.size() + " delayed tasks...");
-            for (Task task : delayedTasks) {
-                run(task);
-            }
-        }
-    }
-
 
 }

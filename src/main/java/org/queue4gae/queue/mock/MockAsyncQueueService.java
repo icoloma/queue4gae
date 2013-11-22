@@ -57,13 +57,13 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
     @Override
     public void post(Task task) {
         try {
+            incQueuedTaskCount(task.getQueueName());
             if (task.getDelaySeconds() > 0) {
-                throw new UnsupportedOperationException("delaySeconds not supported");
+                pushDelayedTask(task);
             }
             if (task.getTaskName() != null) {
                 addTombstone(task.getTaskName());
             }
-            incQueuedTaskCount(task.getQueueName());
             queue.putFirst(task);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -100,7 +100,6 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
                     while (failed) {
                         try {
                             MockAsyncQueueService.this.run(task);
-                            incCompletedTaskCount(task.getQueueName());
                             failed = false;
 
                         } catch (Exception e) {
