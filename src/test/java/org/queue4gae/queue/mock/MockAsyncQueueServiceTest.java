@@ -1,7 +1,6 @@
 package org.queue4gae.queue.mock;
 
-import com.google.appengine.api.datastore.Cursor;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.*;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -15,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.queue4gae.queue.InjectedTask;
 import org.queue4gae.queue.QueueService;
-import org.queue4gae.queue.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,16 +27,31 @@ public class MockAsyncQueueServiceTest {
 
     private MockAsyncQueueService queue;
 
+    private LocalServiceTestHelper helper;
+
     @Before
     public void setupServices() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
         objectMapper.registerModule(new GaeJacksonModule());
 
-        LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
-        queue = new MockAsyncQueueService(helper);
+        helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+        helper.setUp();
+
+        DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+        Entity e = new Entity("foo", 1);
+        ds.put(e);
+
+        queue = new MockAsyncQueueService();
         queue.setInjectionService(new MockInjectionService());
         queue.setObjectMapper(objectMapper);
+        queue.start();
+    }
+
+    @After
+    public void tearDown() {
+        queue.stop();
+        helper.tearDown();
     }
 
     @Test
@@ -79,11 +92,15 @@ public class MockAsyncQueueServiceTest {
         public void run(QueueService queueService) {
             try {
                 // do something with the Datastore to check that this thread can work with AppEngine
+                DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+                Entity e = ds.get(KeyFactory.createKey("foo", 1));
                 DatastoreServiceFactory.getDatastoreService().allocateIds("xyz", 1);
 
                 log.info("Executing task #" + id);
                 Thread.sleep(20);
             } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (EntityNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }

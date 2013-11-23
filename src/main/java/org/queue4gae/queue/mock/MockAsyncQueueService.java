@@ -1,5 +1,6 @@
 package org.queue4gae.queue.mock;
 
+import com.google.appengine.api.ThreadManager;
 import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.base.Stopwatch;
@@ -19,26 +20,48 @@ import java.util.concurrent.*;
 
 /**
  * Intended for testing your Task classes.
- * Invoking {@link #post(org.queue4gae.queue.Task)} will execute Task.run() in a separate Thread.
+ * Invoking {@link #post(org.queue4gae.queue.Task)} will execute Task.run() in a separate Thread. Threads are launched using {@link #start()},
+ * and are stopped invoking {@link #stop()}.
+<pre>
+@Before
+public void setupServices() {
+    helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+    helper.setUp();
+
+    queue = new MockAsyncQueueService();
+    queue.start();
+}
+
+ @After
+ public void tearDown() {
+    queue.stop();
+    helper.tearDown();
+ }
+ </pre>
  */
 @Singleton
 public class MockAsyncQueueService extends AbstractQueueServiceImpl {
+
+    /** number of consumer threads to span */
+    private int numThreads;
 
     private ExecutorService executorService;
 
     private BlockingDeque<Task> queue = new LinkedBlockingDeque<Task>();
 
-    private final LocalServiceTestHelper helper;
-
-    private boolean running = true;
-
-    public MockAsyncQueueService(LocalServiceTestHelper helper) {
-        this(10, helper);
+    public MockAsyncQueueService() {
+        this(10);
     }
 
-    public MockAsyncQueueService(int numThreads, LocalServiceTestHelper helper) {
-        this.helper = helper;
-        this.executorService = Executors.newFixedThreadPool(numThreads);
+    public MockAsyncQueueService(int numThreads) {
+        this.numThreads = numThreads;
+    }
+
+    /**
+     * Start the consumer threads
+     */
+    public void start() {
+        this.executorService = Executors.newFixedThreadPool(numThreads, ThreadManager.currentRequestThreadFactory());
         for (int i = 0; i < numThreads; i++) {
             executorService.execute(new Consumer());
         }
@@ -95,7 +118,6 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
 
         @Override
         public void run() {
-            helper.setUp();
             try {
                 while (true) {
                     Task task = queue.take();
@@ -122,12 +144,6 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
                 }
             } catch (InterruptedException e) {
                 return;
-            } finally {
-                try {
-                    helper.tearDown();
-                } catch (Exception e) {
-                    log.error(e.toString(), e);
-                }
             }
         }
     }

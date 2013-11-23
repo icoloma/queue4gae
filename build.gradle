@@ -30,10 +30,6 @@ dependencies {
                     "org.codehaus.jackson:jackson-mapper-asl:1.9.2",
                     "org.extrema-sistemas:jackson4gae:1.1"
 
-    // hack
-    providedCompile "com.google.appengine:appengine-testing:${appengineVersion}",
-                    "com.google.appengine:appengine-api-stubs:${appengineVersion}"
-
     testCompile		"junit:junit:4.5",
                     "com.google.appengine:appengine-testing:${appengineVersion}",
                     "com.google.appengine:appengine-api-stubs:${appengineVersion}",
