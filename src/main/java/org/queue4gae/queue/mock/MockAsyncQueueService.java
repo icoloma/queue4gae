@@ -1,6 +1,7 @@
 package org.queue4gae.queue.mock;
 
 import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
+import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -27,13 +28,16 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
 
     private BlockingDeque<Task> queue = new LinkedBlockingDeque<Task>();
 
+    private final LocalServiceTestHelper helper;
+
     private boolean running = true;
 
-    public MockAsyncQueueService() {
-        this(10);
+    public MockAsyncQueueService(LocalServiceTestHelper helper) {
+        this(10, helper);
     }
 
-    public MockAsyncQueueService(int numThreads) {
+    public MockAsyncQueueService(int numThreads, LocalServiceTestHelper helper) {
+        this.helper = helper;
         this.executorService = Executors.newFixedThreadPool(numThreads);
         for (int i = 0; i < numThreads; i++) {
             executorService.execute(new Consumer());
@@ -91,6 +95,7 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
 
         @Override
         public void run() {
+            helper.setUp();
             try {
                 while (true) {
                     Task task = queue.take();
@@ -117,6 +122,12 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
                 }
             } catch (InterruptedException e) {
                 return;
+            } finally {
+                try {
+                    helper.tearDown();
+                } catch (Exception e) {
+                    log.error(e.toString(), e);
+                }
             }
         }
     }

@@ -1,11 +1,15 @@
 package org.queue4gae.queue.mock;
 
 import com.google.appengine.api.datastore.Cursor;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
+import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
 import org.j4gae.GaeJacksonModule;
 import org.j4gae.ObjectMapperSetup;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,13 +23,6 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created with IntelliJ IDEA.
- * User: icoloma
- * Date: 11/21/13
- * Time: 9:00 AM
- * To change this template use File | Settings | File Templates.
- */
 public class MockAsyncQueueServiceTest {
 
     private static final Logger log = LoggerFactory.getLogger(MockAsyncQueueServiceTest.class);
@@ -38,7 +35,8 @@ public class MockAsyncQueueServiceTest {
         objectMapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
         objectMapper.registerModule(new GaeJacksonModule());
 
-        queue = new MockAsyncQueueService();
+        LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+        queue = new MockAsyncQueueService(helper);
         queue.setInjectionService(new MockInjectionService());
         queue.setObjectMapper(objectMapper);
     }
@@ -80,6 +78,9 @@ public class MockAsyncQueueServiceTest {
         @Override
         public void run(QueueService queueService) {
             try {
+                // do something with the Datastore to check that this thread can work with AppEngine
+                DatastoreServiceFactory.getDatastoreService().allocateIds("xyz", 1);
+
                 log.info("Executing task #" + id);
                 Thread.sleep(20);
             } catch (InterruptedException e) {

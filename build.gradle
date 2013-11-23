@@ -4,8 +4,9 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/artifacts.gradle'
+apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/providedCompile.gradle'
 
-project.version='1.3-SNAPSHOT'
+project.version='1.4-SNAPSHOT'
 project.group='org.extrema-sistemas'
 
 sourceCompatibility=1.6
@@ -28,6 +29,10 @@ dependencies {
                     "org.codehaus.jackson:jackson-core-asl:1.9.2",
                     "org.codehaus.jackson:jackson-mapper-asl:1.9.2",
                     "org.extrema-sistemas:jackson4gae:1.1"
+
+    // hack
+    providedCompile "com.google.appengine:appengine-testing:${appengineVersion}",
+                    "com.google.appengine:appengine-api-stubs:${appengineVersion}"
 
     testCompile		"junit:junit:4.5",
                     "com.google.appengine:appengine-testing:${appengineVersion}",
