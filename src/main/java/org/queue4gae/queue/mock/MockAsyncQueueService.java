@@ -85,26 +85,28 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
     public void post(Task task) {
         try {
             incQueuedTaskCount(task.getQueueName());
-            if (task.getDelaySeconds() > 0) {
-                pushDelayedTask(task);
-            }
             if (task.getTaskName() != null) {
                 addTombstone(task.getTaskName());
             }
-            queue.putFirst(task);
+            if (task.getDelaySeconds() > 0) {
+                pushDelayedTask(task);
+            } else {
+                queue.putFirst(task);
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Wait until the queue is empty.
-     * @throws TimeoutException if the queue is not empty after waiting timeoutInMillis
+     * Wait until all tasks with no delay have been executed.
+     * @see #runDelayedTasks()
+     * @throws TimeoutException if the queue is not empty after waiting timeoutInMillis.
      */
     public void waitUntilEmpty(int timeoutInMillis) throws TimeoutException {
         Stopwatch watch = new Stopwatch().start();
         do {
-            if (getCompletedTaskCount() == getQueuedTaskCount()) {
+            if (getCompletedTaskCount() + getDelayedTaskCount() == getQueuedTaskCount()) {
                 return;
             }
         } while (watch.elapsed(TimeUnit.MILLISECONDS) < timeoutInMillis);

@@ -63,6 +63,21 @@ public class MockAsyncQueueServiceTest {
     }
 
     @Test
+    public void testDelayedTasks() throws Exception {
+        assertEquals(0, queue.getQueuedTaskCount());
+        assertEquals(0, queue.getCompletedTaskCount());
+        queue.post(new MyTask(0));
+        queue.post(new MyTask(1));
+        queue.post(new MyTask(1).withDelaySeconds(1));
+        queue.waitUntilEmpty(1000);
+        assertEquals(3, queue.getQueuedTaskCount());
+        assertEquals(2, queue.getCompletedTaskCount());
+        queue.runDelayedTasks();
+        assertEquals(3, queue.getQueuedTaskCount());
+        assertEquals(3, queue.getCompletedTaskCount());
+    }
+
+    @Test
     public void testFailingTask() throws Exception {
         for (int i = 0; i < 5; i ++) {
             queue.post(new MyTask(i));

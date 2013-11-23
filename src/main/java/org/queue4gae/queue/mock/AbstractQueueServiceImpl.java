@@ -77,14 +77,14 @@ public abstract class AbstractQueueServiceImpl implements QueueService {
     }
 
     /**
-     * @return the total number of task instances queued, including all queue names
+     * @return the number of task instances queued, including all queue names
      */
     public int getQueuedTaskCount() {
         return queuedTaskCount.size();
     }
 
     /**
-     * @return the total number of task instances queued for the provided queue name
+     * @return the number of task instances queued for the provided queue name
      */
     public int getQueuedTaskCount(String queueName) {
         return queuedTaskCount.count(queueNameOrDefault(queueName));
@@ -95,17 +95,24 @@ public abstract class AbstractQueueServiceImpl implements QueueService {
     }
 
     /**
-     * @return the total number of task instances queued, including all queue names
+     * @return the number of tasks completed, including all queue names
      */
     public int getCompletedTaskCount() {
         return completedTaskCount.size();
     }
 
     /**
-     * @return the total number of task instances queued for the provided queue name
+     * @return the number of tasks completed for the provided queue name
      */
     public int getCompletedTaskCount(String queueName) {
         return completedTaskCount.count(queueNameOrDefault(queueName));
+    }
+
+    /**
+     * @return the number of delayed tasks still pending execution
+     */
+    public int getDelayedTaskCount() {
+        return delayedTasks.size();
     }
 
     @Inject
