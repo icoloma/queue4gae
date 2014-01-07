@@ -9,6 +9,8 @@ Queue4GAE is a Java task queue wrapper for Google AppEngine that replaces the bu
  * In case of timeout, tasks will **automatically resume where they left off**.
  * Includes a **mock testing environment**.
 
+[![Analytics](https://ga-beacon.appspot.com/UA-3159223-5/icoloma/queue4gae)](https://github.com/icoloma/queue4gae)
+
 ## Getting started
 
 Queue4Gae can be downloaded from Maven:
