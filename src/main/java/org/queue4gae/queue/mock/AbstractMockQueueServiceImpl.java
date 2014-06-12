@@ -2,7 +2,6 @@ package org.queue4gae.queue.mock;
 
 import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import com.google.common.collect.ConcurrentHashMultiset;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -14,6 +13,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 
 public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueServiceImpl> implements QueueService {
@@ -34,7 +34,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     private Multiset<String> completedTaskCount = ConcurrentHashMultiset.create();
 
     /** delayed tasks */
-    private List<Task> delayedTasks = Lists.newArrayList();
+    private List<Task> delayedTasks = new CopyOnWriteArrayList<Task>();
 
     /** if not null, applies this delay to all queued tasks */
     protected Integer delaySeconds;
