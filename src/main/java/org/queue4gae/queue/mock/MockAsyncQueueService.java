@@ -109,9 +109,13 @@ public class MockAsyncQueueService extends AbstractMockQueueServiceImpl<MockAsyn
      * Invokes waitUntilEmpty(1000), then executed all delayed tasks.
      */
     @Override
-    public void runDelayedTasks() throws TimeoutException {
-        waitUntilEmpty(1000);
-        super.runDelayedTasks();
+    public void runDelayedTasks() {
+        try {
+            waitUntilEmpty(1000);
+            super.runDelayedTasks();
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

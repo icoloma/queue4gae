@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeoutException;
 
 public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueServiceImpl> implements QueueService {
 
@@ -159,7 +158,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     /**
      * Execute delayed tasks
      */
-    public void runDelayedTasks() throws TimeoutException {
+    public void runDelayedTasks() {
         if (delayedTasks.size() > 0) {
             log.info("Running " + delayedTasks.size() + " delayed tasks...");
             serializeExecutionOfTasks(delayedTasks);
