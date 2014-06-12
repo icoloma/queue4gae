@@ -11,7 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeoutException;
 
 public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueServiceImpl> implements QueueService {
@@ -32,7 +36,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     private Multiset<String> completedTaskCount = ConcurrentHashMultiset.create();
 
     /** delayed tasks */
-    private List<Task> delayedTasks = new ArrayList<Task>();
+    private Queue<Task> delayedTasks = new ConcurrentLinkedQueue<Task>();
 
     /** if not null, applies this delay to all queued tasks */
     protected Integer delaySeconds;
