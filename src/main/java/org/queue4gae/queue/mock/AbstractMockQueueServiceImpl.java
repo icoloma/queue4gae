@@ -11,9 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueServiceImpl> implements QueueService {
@@ -34,7 +32,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     private Multiset<String> completedTaskCount = ConcurrentHashMultiset.create();
 
     /** delayed tasks */
-    private List<Task> delayedTasks = new CopyOnWriteArrayList<Task>();
+    private List<Task> delayedTasks = new ArrayList<Task>();
 
     /** if not null, applies this delay to all queued tasks */
     protected Integer delaySeconds;
@@ -160,8 +158,21 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     public void runDelayedTasks() throws TimeoutException {
         if (delayedTasks.size() > 0) {
             log.info("Running " + delayedTasks.size() + " delayed tasks...");
-            for (Task task : delayedTasks) {
-                run(task);
+            serializeExecutionOfTasks(delayedTasks);
+        }
+    }
+
+    /**
+     * Serialize the execution of all tasks in the queue. If one tasks create a new task, it will be executed too.
+     * This method will return when the tasks list is empty
+     * @param tasks
+     */
+    public void serializeExecutionOfTasks(Collection<Task> tasks) {
+        while (!tasks.isEmpty()) {
+            for (Iterator<Task> it = tasks.iterator(); it.hasNext(); ) {
+                Task t = it.next();
+                run(t);
+                it.remove();
             }
         }
     }
