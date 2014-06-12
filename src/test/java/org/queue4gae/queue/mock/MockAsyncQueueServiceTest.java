@@ -7,17 +7,18 @@ import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
 import org.j4gae.GaeJacksonModule;
-import org.j4gae.ObjectMapperSetup;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.queue4gae.queue.InjectedTask;
 import org.queue4gae.queue.QueueService;
+import org.queue4gae.queue.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -91,6 +92,36 @@ public class MockAsyncQueueServiceTest {
         }
     }
 
+    @Test
+    public void testSetupTask() throws Exception {
+        final AtomicInteger setupInvocations = new AtomicInteger();
+        final AtomicInteger teardownInvocations = new AtomicInteger();
+
+        queue.stop();
+        queue = new MockAsyncQueueService() {
+
+            @Override
+            protected void setupTask(Task task) {
+                setupInvocations.incrementAndGet();
+            }
+
+            @Override
+            protected void teardownTask(Task task) {
+                teardownInvocations.incrementAndGet();
+            }
+
+        };
+        queue.setInjectionService(new MockInjectionService());
+        queue.setObjectMapper(new ObjectMapper());
+        queue.start();
+
+        queue.post(new FailOnceTask());
+
+        queue.waitUntilEmpty(2000);
+        assertEquals(2, setupInvocations.get());
+        assertEquals(2, teardownInvocations.get());
+    }
+
     public static class MyTask extends InjectedTask {
 
         private int id;
@@ -117,6 +148,19 @@ public class MockAsyncQueueServiceTest {
                 throw new RuntimeException(e);
             } catch (EntityNotFoundException e) {
                 throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static class FailOnceTask extends InjectedTask {
+
+        private static ThreadLocal tl = new ThreadLocal();
+
+        @Override
+        public void run(QueueService queueService) {
+            if (tl.get() == null) {
+                tl.set(new Object());
+                throw new RuntimeException("Temporary error");
             }
         }
     }

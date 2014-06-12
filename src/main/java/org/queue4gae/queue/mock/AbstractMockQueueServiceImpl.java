@@ -49,20 +49,41 @@ public abstract class AbstractMockQueueServiceImpl implements QueueService {
     }
 
     /**
+     * Extension point to set up anything related to the current Task and Thread, like ThreadLocal variables
+     * @param task the task about to be executed
+     */
+    protected void setupTask(Task task) {
+    }
+
+    /**
+     * Extension point to clean up anything related to the current Task and Thread, like ThreadLocal variables
+     * @param task the task that just finished execution
+     */
+    protected void teardownTask(Task task) {
+    }
+
+    /**
      * Serializes, deserializes and executes the task
      */
     public void run(Task task) {
         try {
             // inject before serializing, to check that all fields are serializable as JSON
             injectionService.injectMembers(task);
+
             String s = objectMapper.writeValueAsString(task);
             log.info("Executing " + s);
 
             // inject after deserializing, for proper execution
             InjectedTask deserialized = objectMapper.readValue(s, InjectedTask.class);
             injectionService.injectMembers(deserialized);
-            ((AbstractTask)deserialized).run(this);
-            incCompletedTaskCount(task.getQueueName());
+            setupTask(task);
+
+            try {
+                ((AbstractTask)deserialized).run(this);
+                incCompletedTaskCount(task.getQueueName());
+            } finally {
+                teardownTask(task);
+            }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
