@@ -14,8 +14,9 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
-public abstract class AbstractQueueServiceImpl implements QueueService {
+public abstract class AbstractMockQueueServiceImpl implements QueueService {
 
     protected static final String DEFAULT_QUEUE_NAME = "default";
 
@@ -132,7 +133,7 @@ public abstract class AbstractQueueServiceImpl implements QueueService {
     /**
      * Execute delayed tasks
      */
-    public void runDelayedTasks() {
+    public void runDelayedTasks() throws TimeoutException {
         if (delayedTasks.size() > 0) {
             log.info("Running " + delayedTasks.size() + " delayed tasks...");
             for (Task task : delayedTasks) {

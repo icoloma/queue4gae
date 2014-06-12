@@ -1,7 +1,5 @@
 package org.queue4gae.queue.mock;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.queue4gae.queue.*;
 
 import javax.inject.Singleton;
@@ -13,7 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Invoking {@link #post(org.queue4gae.queue.Task)} will execute Task.run() synchronously and return.
  */
 @Singleton
-public class MockQueueService extends AbstractQueueServiceImpl {
+public class MockQueueService extends AbstractMockQueueServiceImpl {
 
     /** our queue of tasks */
     protected Queue<Task> tasks = new ConcurrentLinkedQueue<Task>();

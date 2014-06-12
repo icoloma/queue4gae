@@ -12,7 +12,7 @@ import java.util.concurrent.*;
  * Invoking {@link #post(org.queue4gae.queue.Task)} will execute Task.run() in a separate Thread. Threads are launched using {@link #start()},
  * and are stopped invoking {@link #stop()}.
 <pre>
-@Before
+\@Before
 public void setupServices() {
     helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
     helper.setUp();
@@ -21,7 +21,7 @@ public void setupServices() {
     queue.start();
 }
 
- @After
+ \@After
  public void tearDown() {
     queue.stop();
     helper.tearDown();
@@ -29,7 +29,7 @@ public void setupServices() {
  </pre>
  */
 @Singleton
-public class MockAsyncQueueService extends AbstractQueueServiceImpl {
+public class MockAsyncQueueService extends AbstractMockQueueServiceImpl {
 
     /** number of consumer threads to span */
     private int numThreads;
@@ -67,7 +67,7 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
     /**
      * Execute the task immediately unless delaySeconds is != null.
      * Recursive invocation of this method (a task pushing another task into the queue) will store the task for
-     * serial execution. This method will not return until the last task has finished.
+     * serial execution. This method will return immediately.
      * @param task
      */
     @Override
@@ -100,6 +100,15 @@ public class MockAsyncQueueService extends AbstractQueueServiceImpl {
             }
         } while (watch.elapsed(TimeUnit.MILLISECONDS) < timeoutInMillis);
         throw new TimeoutException("Timeout waiting for " + (getQueuedTaskCount() - getCompletedTaskCount()) + " queue tasks to complete.");
+    }
+
+    /**
+     * Invokes waitUntilEmpty(1000), then executed all delayed tasks.
+     */
+    @Override
+    public void runDelayedTasks() throws TimeoutException {
+        waitUntilEmpty(1000);
+        super.runDelayedTasks();
     }
 
     /**
