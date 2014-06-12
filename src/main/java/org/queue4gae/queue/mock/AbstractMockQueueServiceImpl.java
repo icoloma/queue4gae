@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-public abstract class AbstractMockQueueServiceImpl implements QueueService {
+public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueServiceImpl> implements QueueService {
 
     protected static final String DEFAULT_QUEUE_NAME = "default";
 
@@ -35,6 +35,9 @@ public abstract class AbstractMockQueueServiceImpl implements QueueService {
 
     /** delayed tasks */
     private List<Task> delayedTasks = Lists.newArrayList();
+
+    /** if not null, applies this delay to all queued tasks */
+    protected Integer delaySeconds;
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -162,4 +165,10 @@ public abstract class AbstractMockQueueServiceImpl implements QueueService {
             }
         }
     }
+
+    public T withDelaySeconds(Integer delaySeconds) {
+        this.delaySeconds = delaySeconds;
+        return (T) this;
+    }
+
 }

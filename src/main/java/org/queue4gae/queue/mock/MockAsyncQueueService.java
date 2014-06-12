@@ -29,7 +29,7 @@ public void setupServices() {
  </pre>
  */
 @Singleton
-public class MockAsyncQueueService extends AbstractMockQueueServiceImpl {
+public class MockAsyncQueueService extends AbstractMockQueueServiceImpl<MockAsyncQueueService> {
 
     /** number of consumer threads to span */
     private int numThreads;
@@ -73,6 +73,9 @@ public class MockAsyncQueueService extends AbstractMockQueueServiceImpl {
     @Override
     public void post(Task task) {
         try {
+            if (delaySeconds != null && task.getDelaySeconds() == 0) {
+                task.withDelaySeconds(delaySeconds);
+            }
             incQueuedTaskCount(task.getQueueName());
             if (task.getTaskName() != null) {
                 addTombstone(task.getTaskName());

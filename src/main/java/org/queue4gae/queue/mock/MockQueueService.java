@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Invoking {@link #post(org.queue4gae.queue.Task)} will execute Task.run() synchronously and return.
  */
 @Singleton
-public class MockQueueService extends AbstractMockQueueServiceImpl {
+public class MockQueueService extends AbstractMockQueueServiceImpl<MockQueueService> {
 
     /** our queue of tasks */
     protected Queue<Task> tasks = new ConcurrentLinkedQueue<Task>();
@@ -35,6 +35,10 @@ public class MockQueueService extends AbstractMockQueueServiceImpl {
     @Override
     public void post(Task task) {
         incQueuedTaskCount(task.getQueueName());
+        if (delaySeconds != null && task.getDelaySeconds() == 0) {
+            task.withDelaySeconds(delaySeconds);
+        }
+
         if (task.getDelaySeconds() == 0) {
             pushTask(task);
             if (tasks.size() == 1) {
@@ -51,5 +55,6 @@ public class MockQueueService extends AbstractMockQueueServiceImpl {
             pushDelayedTask(task);
         }
     }
+
 
 }
