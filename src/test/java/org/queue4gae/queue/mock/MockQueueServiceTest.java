@@ -66,6 +66,12 @@ public class MockQueueServiceTest {
         assertTrue("later".equals(DelayedTask.lastValue));
     }
 
+    @Test
+    public void testRetries() {
+        queueService.withRetries(2);
+        queueService.post(new FailOnceTask());
+    }
+
     public static class ATask extends InjectedTask {
 
         @Override
@@ -116,6 +122,20 @@ public class MockQueueServiceTest {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+    public static class FailOnceTask extends InjectedTask {
+
+        private static boolean failed;
+
+        @Override
+        public void run(QueueService queueService) {
+            if (!failed) {
+                failed = true;
+                throw new RuntimeException("Temporary error");
             }
         }
 

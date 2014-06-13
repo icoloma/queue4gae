@@ -40,6 +40,9 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     /** if not null, applies this delay to all queued tasks */
     protected Integer delaySeconds;
 
+    /** the number of times a task will be retried, by default 0 (any exception will fail the test) */
+    protected int retries = 0;
+
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
@@ -173,15 +176,32 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     public void serializeExecutionOfTasks(Collection<Task> tasks) {
         while (!tasks.isEmpty()) {
             for (Iterator<Task> it = tasks.iterator(); it.hasNext(); ) {
+                int attempts = 0;
                 Task t = it.next();
-                run(t);
-                it.remove();
+                while (true) {
+                    try {
+                        run(t);
+                        it.remove();
+                        break;
+                    } catch (RuntimeException e) {
+                        if (attempts++ >= retries) {
+                            throw e;
+                        }
+                        log.error(e.toString(), e);
+                        log.info("Retrying " + attempts + " of " + retries);
+                    }
+                }
             }
         }
     }
 
     public T withDelaySeconds(Integer delaySeconds) {
         this.delaySeconds = delaySeconds;
+        return (T) this;
+    }
+
+    public T withRetries(int retries) {
+        this.retries = retries;
         return (T) this;
     }
 
