@@ -7,12 +7,11 @@ import org.codehaus.jackson.map.introspect.VisibilityChecker;
 import org.j4gae.GaeJacksonModule;
 import org.junit.Before;
 import org.junit.Test;
+import org.queue4gae.queue.AbstractTask;
 import org.queue4gae.queue.InjectedTask;
 import org.queue4gae.queue.QueueService;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -55,6 +54,18 @@ public class MockQueueServiceTest {
         }
     }
 
+    @Test
+    public void testDelayedTasksExecutionOrder() {
+        DelayedTask later = new DelayedTask("later").withDelaySeconds(100);
+        queueService.post(later);
+
+        DelayedTask sooner = new DelayedTask("sooner").withDelaySeconds(10);
+        queueService.post(sooner);
+
+        queueService.runDelayedTasks();
+        assertTrue("later".equals(DelayedTask.lastValue));
+    }
+
     public static class ATask extends InjectedTask {
 
         @Override
@@ -81,6 +92,31 @@ public class MockQueueServiceTest {
 
         @Override
         public void run(QueueService queueService) {
+        }
+
+    }
+
+    public static class DelayedTask extends AbstractTask<DelayedTask> {
+
+        public static String lastValue;
+
+        private String myValue;
+
+        private DelayedTask() {
+        }
+
+        public DelayedTask(String myValue) {
+            this.myValue = myValue;
+        }
+
+        @Override
+        public void run(QueueService queueService) {
+            try {
+                lastValue = myValue;
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
 
     }

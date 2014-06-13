@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueServiceImpl> implements QueueService {
 
@@ -35,7 +35,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
     private Multiset<String> completedTaskCount = ConcurrentHashMultiset.create();
 
     /** delayed tasks */
-    private Queue<Task> delayedTasks = new ConcurrentLinkedQueue<Task>();
+    private Queue<Task> delayedTasks = new PriorityBlockingQueue<Task>(100, new DelayedTaskComparator());
 
     /** if not null, applies this delay to all queued tasks */
     protected Integer delaySeconds;
@@ -78,7 +78,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
             log.info("Executing " + s);
 
             // inject after deserializing, for proper execution
-            InjectedTask deserialized = objectMapper.readValue(s, InjectedTask.class);
+            AbstractTask deserialized = objectMapper.readValue(s, AbstractTask.class);
             injectionService.injectMembers(deserialized);
             setupTask(task);
 
