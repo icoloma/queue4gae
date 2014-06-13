@@ -21,9 +21,6 @@ public class MockQueueService extends AbstractMockQueueServiceImpl<MockQueueServ
      */
     protected void pushTask(Task task) {
         tasks.add(task);
-        if (task.getTaskName() != null) {
-            addTombstone(task.getTaskName());
-        }
     }
 
     /**
@@ -34,6 +31,10 @@ public class MockQueueService extends AbstractMockQueueServiceImpl<MockQueueServ
      */
     @Override
     public void post(Task task) {
+        if (task.getTaskName() != null) {
+            addTombstone(task.getTaskName());
+        }
+
         incQueuedTaskCount(task.getQueueName());
         if (delaySeconds != null && task.getDelaySeconds() == 0) {
             task.withDelaySeconds(delaySeconds);

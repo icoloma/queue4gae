@@ -1,19 +1,18 @@
 package org.queue4gae.queue.mock;
 
-import com.google.appengine.api.datastore.Cursor;
+import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.introspect.VisibilityChecker;
 import org.j4gae.GaeJacksonModule;
-import org.j4gae.ObjectMapperSetup;
 import org.junit.Before;
 import org.junit.Test;
 import org.queue4gae.queue.InjectedTask;
 import org.queue4gae.queue.QueueService;
-import org.queue4gae.queue.mock.MockInjectionService;
-import org.queue4gae.queue.mock.MockQueueService;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -45,6 +44,17 @@ public class MockQueueServiceTest {
         assertTrue(bFinished);
     }
 
+    @Test
+    public void tombstone() {
+        queueService.post(new TombstonedTask().withTaskName("foo"));
+        try {
+            queueService.post(new TombstonedTask().withTaskName("foo"));
+            fail("Accepted a tomstoned task");
+        } catch (TaskAlreadyExistsException e) {
+            assertEquals(1, queueService.getQueuedTaskCount());
+        }
+    }
+
     public static class ATask extends InjectedTask {
 
         @Override
@@ -63,6 +73,14 @@ public class MockQueueServiceTest {
             assertTrue(aStarted);
             assertTrue(aFinished);
             bFinished = true;
+        }
+
+    }
+
+    public static class TombstonedTask extends InjectedTask {
+
+        @Override
+        public void run(QueueService queueService) {
         }
 
     }
