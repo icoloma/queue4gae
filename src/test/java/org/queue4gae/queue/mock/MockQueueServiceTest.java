@@ -72,6 +72,17 @@ public class MockQueueServiceTest {
         queueService.post(new FailOnceTask());
     }
 
+    @Test
+    public void delayedTasksOfType() {
+        queueService.post(new DelayedTaskOfTypeA().withDelaySeconds(1));
+        queueService.post(new DelayedTaskOfTypeB().withDelaySeconds(1));
+        assertEquals(2, queueService.getDelayedTaskCount());
+        queueService.runDelayedTasks(DelayedTaskOfTypeA.class);
+        assertEquals(1, queueService.getDelayedTaskCount());
+        queueService.runDelayedTasks(DelayedTaskOfTypeB.class);
+        assertEquals(0, queueService.getDelayedTaskCount());
+    }
+
     public static class ATask extends InjectedTask {
 
         @Override
@@ -141,6 +152,21 @@ public class MockQueueServiceTest {
 
     }
 
+    public static class DelayedTaskOfTypeA extends InjectedTask {
+
+        @Override
+        public void run(QueueService queueService) {
+        }
+
+    }
+
+    public static class DelayedTaskOfTypeB extends InjectedTask {
+
+        @Override
+        public void run(QueueService queueService) {
+        }
+
+    }
 
 
 }

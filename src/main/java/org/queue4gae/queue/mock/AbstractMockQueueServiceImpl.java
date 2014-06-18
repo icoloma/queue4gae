@@ -179,13 +179,16 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
      * @param tasks
      */
     public void serializeExecutionOfTasks(Collection<Task> tasks, Class<? extends Task> taskClass) {
-        while (!tasks.isEmpty()) {
+        int tasksRun = 1;
+        while (tasksRun > 0) {
+            tasksRun = 0;
             for (Iterator<Task> it = tasks.iterator(); it.hasNext(); ) {
                 int attempts = 0;
                 Task t = it.next();
                 while (true) {
                     try {
                         if (taskClass.isAssignableFrom(t.getClass())) {
+                            tasksRun++;
                             run(t);
                             it.remove();
                         }
