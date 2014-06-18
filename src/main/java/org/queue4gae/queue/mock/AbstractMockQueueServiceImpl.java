@@ -1,11 +1,15 @@
 package org.queue4gae.queue.mock;
 
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.queue4gae.queue.*;
+import org.queue4gae.queue.AbstractTask;
+import org.queue4gae.queue.InjectionService;
+import org.queue4gae.queue.QueueService;
+import org.queue4gae.queue.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +54,10 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
      * @throws TaskAlreadyExistsException if the task is already registered
      */
     protected void addTombstone(String taskName) {
+        if (DatastoreServiceFactory.getDatastoreService().getCurrentTransaction() != null) {
+            // imitate the behavior in production
+            throw new IllegalArgumentException("transactional tasks cannot be named: " + taskName);
+        }
         if (!tombstones.add(taskName)) {
             throw new TaskAlreadyExistsException("Task name '" + taskName + "' is already in the queue");
         }
