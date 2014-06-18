@@ -162,10 +162,15 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
      * Execute delayed tasks
      */
     public void runDelayedTasks() {
-        if (delayedTasks.size() > 0) {
-            log.info("Running " + delayedTasks.size() + " delayed tasks...");
-            serializeExecutionOfTasks(delayedTasks);
-        }
+        runDelayedTasks(Task.class);
+    }
+
+    /**
+     * Execute delayed tasks of the given type
+     */
+    public void runDelayedTasks(Class<? extends Task> taskClass) {
+        log.info("Running delayed tasks...");
+        serializeExecutionOfTasks(delayedTasks, taskClass);
     }
 
     /**
@@ -173,15 +178,17 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
      * This method will return when the tasks list is empty
      * @param tasks
      */
-    public void serializeExecutionOfTasks(Collection<Task> tasks) {
+    public void serializeExecutionOfTasks(Collection<Task> tasks, Class<? extends Task> taskClass) {
         while (!tasks.isEmpty()) {
             for (Iterator<Task> it = tasks.iterator(); it.hasNext(); ) {
                 int attempts = 0;
                 Task t = it.next();
                 while (true) {
                     try {
-                        run(t);
-                        it.remove();
+                        if (taskClass.isAssignableFrom(t.getClass())) {
+                            run(t);
+                            it.remove();
+                        }
                         break;
                     } catch (RuntimeException e) {
                         if (attempts++ >= retries) {

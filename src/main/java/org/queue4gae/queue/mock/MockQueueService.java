@@ -44,7 +44,7 @@ public class MockQueueService extends AbstractMockQueueServiceImpl<MockQueueServ
             pushTask(task);
             if (tasks.size() == 1) {
                 // we are the first level of post(), not a recursive task-starts-task scenario
-                serializeExecutionOfTasks(tasks);
+                serializeExecutionOfTasks(tasks, Task.class);
             }
         } else {
             pushDelayedTask(task);
