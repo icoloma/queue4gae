@@ -54,7 +54,7 @@ public abstract class AbstractMockQueueServiceImpl <T extends AbstractMockQueueS
      * @throws TaskAlreadyExistsException if the task is already registered
      */
     protected void addTombstone(String taskName) {
-        if (DatastoreServiceFactory.getDatastoreService().getCurrentTransaction() != null) {
+        if (!DatastoreServiceFactory.getDatastoreService().getActiveTransactions().isEmpty()) {
             // imitate the behavior in production
             throw new IllegalArgumentException("transactional tasks cannot be named: " + taskName);
         }

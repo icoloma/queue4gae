@@ -82,7 +82,13 @@ public class MockQueueServiceTest {
         queueService.runDelayedTasks(DelayedTaskOfTypeB.class);
         assertEquals(0, queueService.getDelayedTaskCount());
     }
-
+/*
+    @Test(expected = IllegalArgumentException.class)
+    public void namedTaskInTransaction() {
+        DatastoreServiceFactory.getDatastoreService().beginTransaction();
+        queueService.post(new DelayedTaskOfTypeA());
+    }
+*/
     public static class ATask extends InjectedTask {
 
         @Override
