@@ -5,7 +5,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 apply from: 'https://raw.github.com/icoloma/gradle-plugins/master/artifacts.gradle'
 
-project.version='1.4-SNAPSHOT'
+project.version='1.4'
 project.group='org.extrema-sistemas'
 
 sourceCompatibility=1.7
