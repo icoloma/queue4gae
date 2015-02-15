@@ -67,11 +67,11 @@ public abstract class CursorTask extends InjectedTask {
     }
 
     private void startQueryWatch() {
-        queryWatch = new Stopwatch().start();
+        queryWatch = Stopwatch.createStarted();
     }
 
     private void startQueueWatch() {
-        queueWatch = new Stopwatch().start();
+        queueWatch = Stopwatch.createStarted();
     }
 
     /**

@@ -96,7 +96,7 @@ public class MockAsyncQueueService extends AbstractMockQueueServiceImpl<MockAsyn
      * @throws TimeoutException if the queue is not empty after waiting timeoutInMillis.
      */
     public void waitUntilEmpty(int timeoutInMillis) throws TimeoutException {
-        Stopwatch watch = new Stopwatch().start();
+        Stopwatch watch = Stopwatch.createStarted();
         do {
             if (getCompletedTaskCount() + getDelayedTaskCount() == getQueuedTaskCount()) {
                 return;
